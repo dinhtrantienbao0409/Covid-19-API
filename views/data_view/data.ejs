@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/bootstrap@4.6.1/dist/css/bootstrap.min.css"
+      integrity="sha384-zCbKRCUGaJDkqS1kPbPd7TveP5iyJE0EjAuZQTgFLD2ylzuqKfdKlfG/eSrtxUkn"
+      crossorigin="anonymous"
+    />
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-1BmE4kWBq78iYhFldvKuhfTAU6auU8tT94WrHftjDbrCEXSU1oBoqyl2QvZ6jIW3" crossorigin="anonymous">
+    <title>Document</title>
+    <style>
+      /* Style the tab */
+      .tab {
+        overflow: hidden;
+        border: 1px solid #ccc;
+        background-color: #f1f1f1;
+      }
+
+      /* Style the buttons inside the tab */
+      .tab button {
+        background-color: inherit;
+        float: left;
+        border: none;
+        outline: none;
+        cursor: pointer;
+        padding: 14px 16px;
+        transition: 0.3s;
+        font-size: 17px;
+      }
+
+      /* Change background color of buttons on hover */
+      .tab button:hover {
+        background-color: #ddd;
+      }
+
+      /* Create an active/current tablink class */
+      .tab button.active {
+        background-color: #ccc;
+      }
+
+      /* Style the tab content */
+      .tabcontent {
+        display: none;
+        padding: 6px 12px;
+        border: 1px solid #ccc;
+        border-top: none;
+      }
+    </style>
+  </head>
+  <body>
+    
+    <div class="container-fluid" style="text-align: center">
+      <% items.forEach(function(item) { %>
+      <button
+        type="button"
+        class="btn btn-danger btn-lg btn-block "
+        "
+        style="text-align: center"
+      >
+        Số ca nhiễm <br /><%= item.infected %> <br />Hôm nay: +<%=
+        item.infectedToday %>
+      </button>
+      <button
+        type="button"
+        class="btn btn-success btn-lg btn-block"
+        
+        style="text-align: center"
+      >
+        Khỏi bệnh <br /><%= item.recovered %>
+      </button>
+      <button
+        type="button"
+        class="btn btn-secondary btn-lg btn-block "
+        
+        style="text-align: center"
+      >
+        Tử vong <br /><%= item.died %>
+      </button>
+      <% }); %>
+    </div>
+    <div class="container-fluid">
+      <div class="row">
+        <div class="col-6">
+          <div class="card shadow mb-4">
+            <div class="card-header py-3">
+              <h6 class="m-0 font-weight-bold text-primary">
+                Tình Hình Dịch Cả Nước
+              </h6>
+            </div>
+            <div class="card-body">
+              <div class="table-responsive" >
+                <table
+                  class="table table-bordered"
+                  id="dataTable1"
+                  width="100%"
+                  cellspacing="0"
+                >
+                  <thead>
+                    <tr>
+                      <th scope="col" style="text-align: center">Tỉnh/Thành phố</th>
+                      <th scope="col" style="text-align: center">Tổng số ca</th>
+                      <th scope="col" style="text-align: center">Hôm nay</th>
+                      <th scope="col" style="text-align: center">Tử vong</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <% locations.forEach(function(location) { %>
+                    <tr>
+                      <th scope="row" style="text-align: center">
+                        <%= location.name %>
+                      </th>
+                      <td style="text-align: center">
+                        <%= location.cases %>
+                      </td>
+                      <td style="text-align: center">
+                        <%= location.casesToday ? "+" + location.casesToday : " - " %>
+                      </td>
+                      <td style="text-align: center">
+                        <%= location.death %>
+                      </td>
+                    </tr>
+                    <% }); %>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="col-6">
+          <!-- Tab links -->
+          <div class="tab">
+            <button class="tablinks" onclick="openCity(event, 'London')">Số ca nhiễm</button>
+            <button class="tablinks" onclick="openCity(event, 'Paris')">Số ca khỏi bệnh</button>
+            <button class="tablinks" onclick="openCity(event, 'Tokyo')">Số ca tử vong</button>
+          </div>
+
+          <!-- Tab content -->
+          <div id="London" class="tabcontent">
+            <div>
+              <canvas id="myChart"></canvas>
+            </div>
+          </div>
+
+          <div id="Paris" class="tabcontent">
+            <div>
+              <canvas id="myChart1"></canvas>
+            </div>
+          </div>
+
+          <div id="Tokyo" class="tabcontent">
+            <div>       
+              <canvas id="myChart2"></canvas>
+            </div>
+          </div>  
+        </div>
+      </div>
+    </div>
+  </body>
+
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+  <script>
+    let dates = [];
+    let cases = [];
+    let avgCases7Days = [];
+    let recovered = [];
+    let avgRecovered7day = [];
+    let death = [];
+    let avgDeath7day = [];
+
+    var overview = JSON.parse('<%- JSON.stringify(items[0].overview) %>');
+
+    overview.forEach(item => {
+      dates.push(item.date);
+      cases.push(item.cases);
+      recovered.push(item.recovered);
+      death.push(item.death);
+      avgCases7Days.push(item.avgCases7day);
+      avgRecovered7day.push(item.avgRecovered7day);
+      avgDeath7day.push(item.avgDeath7day);
+    });
+
+    const data = {
+      labels: dates,
+      datasets: [{
+        label: 'Số ca nhiễm',
+        backgroundColor: 'grey',
+        borderColor: 'grey',
+        data: cases,
+        pointStyle: 'circle',
+        order: 2
+      },
+      {
+            type: 'line',
+            label: 'Trung bình 7 ngày',
+            backgroundColor: 'red',
+            borderColor: 'red',
+            pointStyle: 'rectRot',
+            data: avgCases7Days,
+            order: 1
+        }],
+    };
+
+    const data1 = {
+      labels: dates,
+      datasets: [{
+        label: 'Số ca khỏi',
+        backgroundColor: 'grey',
+        borderColor: 'grey',
+        data: recovered,
+        pointStyle: 'circle',
+        order: 2
+      },
+      {
+            type: 'line',
+            label: 'Trung bình 7 ngày',
+            backgroundColor: 'red',
+            borderColor: 'red',
+            data: avgRecovered7day,
+            pointStyle: 'rectRot',
+            order: 1
+        }],
+    };
+
+    const data2 = {
+      labels: dates,
+      datasets: [{
+        label: 'Số ca tử vong',
+        backgroundColor: 'grey',
+        borderColor: 'grey',
+        data: death,
+        pointStyle: 'circle',
+        order: 2
+      },
+      {
+            type: 'line',
+            label: 'Trung bình 7 ngày',
+            backgroundColor: 'red',
+            borderColor: 'red',
+            pointStyle: 'rectRot',
+            data: avgDeath7day,
+            order: 1
+        }],
+    };
+
+    const config = {
+      type: 'bar',
+      data: data,
+      options: {
+        plugins: {
+            legend: {
+                position: "bottom",
+                labels: {
+                  usePointStyle: true
+                }
+            }
+          }
+      }
+    };
+
+    const config1 = {
+      type: 'bar',
+      data: data1,
+      options: {
+        plugins: {
+            legend: {
+                position: "bottom",
+                labels: {
+                  usePointStyle: true
+                }
+            }
+          }
+      }
+    };
+
+    const config2 = {
+      type: 'bar',
+      data: data2,
+      options: {
+        plugins: {
+            legend: {
+                position: "bottom",
+                labels: {
+                  usePointStyle: true
+                }
+            }
+          }
+      }
+    };
+
+    const myChart = new Chart(
+      document.getElementById('myChart'),
+      config
+    ); 
+
+    const myChart1 = new Chart(
+      document.getElementById('myChart1'),
+      config1
+    ); 
+
+    const myChart2 = new Chart(
+      document.getElementById('myChart2'),
+      config2
+    );
+  </script>
+  <script>
+    function openCity(evt, cityName) {
+      // Declare all variables
+      var i, tabcontent, tablinks;
+
+      // Get all elements with class="tabcontent" and hide them
+      tabcontent = document.getElementsByClassName("tabcontent");
+      for (i = 0; i < tabcontent.length; i++) {
+        tabcontent[i].style.display = "none";
+      }
+
+      // Get all elements with class="tablinks" and remove the class "active"
+      tablinks = document.getElementsByClassName("tablinks");
+      for (i = 0; i < tablinks.length; i++) {
+        tablinks[i].className = tablinks[i].className.replace(" active", "");
+      }
+
+      // Show the current tab, and add an "active" class to the button that opened the tab
+      document.getElementById(cityName).style.display = "block";
+      evt.currentTarget.className += " active";
+}
+  </script>
+</html>
